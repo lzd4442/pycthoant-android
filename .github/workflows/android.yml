@@ -23,27 +23,32 @@ jobs:
           node-version: '22'
           cache: npm
 
-      # ── Android SDK 36 ───────────────────────────────────────
-      - name: Download cmdline-tools
+      # ── 检测 / 安装缺失的 Android SDK 组件 ─────────────────
+      - name: Install Android SDK components
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          curl -fsSL \
-            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
-            -o /tmp/cmdline-tools.zip
-          unzip -q /tmp/cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools/
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools \
-             $HOME/android-sdk/cmdline-tools/latest
+          # ubuntu-latest 自带 ANDROID_HOME=/home/runner/android-sdk
+          export ANDROID_HOME="${ANDROID_HOME:-/home/runner/android-sdk}"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
 
-      - name: Accept licenses & install SDK
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses > /dev/null 2>&1 || true
-          sdkmanager --sdk_root=$ANDROID_HOME \
-            "platforms;android-34" \
-            "platforms;android-36" \
-            "build-tools;34.0.0" \
-            "build-tools;36.0.0"
+          # 检查是否需要安装 platforms;android-36
+          if [ -d "$ANDROID_HOME/platforms/android-36" ]; then
+            echo "SDK 36 already installed"
+          else
+            echo "Installing Android SDK 36..."
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            curl -fsSL \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+              -o /tmp/cmdline-tools.zip
+            unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools/"
+            mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" \
+               "$ANDROID_HOME/cmdline-tools/latest"
+            yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
+            "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
+              "platforms;android-34" \
+              "platforms;android-36" \
+              "build-tools;34.0.0" \
+              "build-tools;36.0.0"
+          fi
 
       - name: Install npm dependencies
         run: npm ci
@@ -65,8 +70,7 @@ jobs:
 
       - name: Build APK
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          export ANDROID_HOME="${ANDROID_HOME:-/home/runner/android-sdk}"
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
