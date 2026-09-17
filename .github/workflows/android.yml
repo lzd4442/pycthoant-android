@@ -89,26 +89,41 @@ jobs:
           echo "APK: $APK"
           ls -lh "$APK"
 
-      - name: Upload to GitHub Release
+      # ── 发布到 GitHub Release ─────────────────────────────────
+      - name: Create or update Release
+        id: release
         run: |
-          APK="${{ steps.find_apk.outputs.apk_path }}"
-          APK_NAME=$(basename "$APK")
-
-          # 获取当前 tag 名，没有就用 commit sha
-          TAG="${GITHUB_REF#refs/tags/}"
-          if [ -z "$TAG" ] || [ "$TAG" == "$GITHUB_REF" ]; then
-            TAG="build-${{ github.sha }}"
+          # 提取当前 tag 名
+          REF="${{ github.ref }}"
+          if [[ "$REF" == refs/tags/* ]]; then
+            TAG="${REF#refs/tags/}"
+          else
+            # 从 commit message 或版本文件推断 tag（这里用 sha 前7位）
+            TAG="sha-${{ github.sha }}"
           fi
 
-          # 上传到 release（仅当 release 已存在时）
-          gh release view "$TAG" --repo "${{ github.repository }}" \
-            --json id --jq '.id' > /dev/null 2>&1 && {
-            echo "Uploading $APK_NAME to release $TAG..."
-            gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
-          } || {
-            echo "Release $TAG not found, skipping upload"
-            echo "APK built: $APK"
-          }
+          # 检查 release 是否已存在
+          if gh release view "$TAG" --repo "${{ github.repository }}" &>/dev/null; then
+            echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "release_exists=true" >> $GITHUB_OUTPUT
+          else
+            # 自动创建 release
+            gh release create "$TAG" \
+              --repo "${{ github.repository }}" \
+              --title "Pycthoant Android $TAG" \
+              --notes "🤖 自动构建版本"
+            echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "release_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload APK to Release
+        run: |
+          TAG="${{ steps.release.outputs.release_tag }}"
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          echo "Uploading $(basename $APK) to release $TAG..."
+          gh release upload "$TAG" "$APK" \
+            --repo "${{ github.repository }}" \
+            --clobber
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
