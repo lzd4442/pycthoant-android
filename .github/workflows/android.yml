@@ -86,8 +86,29 @@ jobs:
         run: |
           APK=$(find . -name "*.apk" -not -path "./build/*" | head -1)
           echo "apk_path=$APK" >> $GITHUB_OUTPUT
-          echo "APK file: $APK"
+          echo "APK: $APK"
           ls -lh "$APK"
+
+      - name: Upload to GitHub Release
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          APK_NAME=$(basename "$APK")
+
+          # 获取当前 tag 名，没有就用 commit sha
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [ -z "$TAG" ] || [ "$TAG" == "$GITHUB_REF" ]; then
+            TAG="build-${{ github.sha }}"
+          fi
+
+          # 上传到 release（仅当 release 已存在时）
+          gh release view "$TAG" --repo "${{ github.repository }}" \
+            --json id --jq '.id' > /dev/null 2>&1 && {
+            echo "Uploading $APK_NAME to release $TAG..."
+            gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
+          } || {
+            echo "Release $TAG not found, skipping upload"
+            echo "APK built: $APK"
+          }
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
@@ -95,11 +116,3 @@ jobs:
           name: pycthoant-android-apk
           path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
-
-      - name: Upload to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          APK="${{ steps.find_apk.outputs.apk_path }}"
-          gh release upload "${{ github.ref_name }}" "$APK" \
-            --clobber \
-            --repo "${{ github.repository }}"
