@@ -93,7 +93,6 @@ jobs:
       - name: Create or update Release
         id: release
         run: |
-          # 提取当前 tag 名
           REF="${{ github.ref }}"
           if [[ "$REF" == refs/tags/* ]]; then
             TAG="${REF#refs/tags/}"
@@ -101,29 +100,28 @@ jobs:
             TAG="sha-${{ github.sha }}"
           fi
 
-          # 先尝试查看 release 是否存在
-          set +e
-          gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1
-          CODE=$?
-          set -e
+          # 用 GitHub API 检查 release 是否存在
+          RESP=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
 
-          if [ $CODE -eq 0 ]; then
+          if [ "$RESP" = "200" ]; then
+            echo "Release $TAG exists, using it"
             echo "release_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "release_exists=true" >> $GITHUB_OUTPUT
           else
-            gh release create "$TAG" \
-              --repo "${{ github.repository }}" \
-              --title "Pycthoant Android $TAG" \
-              --notes "🤖 自动构建版本"
+            echo "Creating new release $TAG..."
+            curl -s -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"tag_name\":\"$TAG\",\"name\":\"Pycthoant Android $TAG\",\"body\":\"🤖 自动构建版本\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases"
             echo "release_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "release_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload APK to Release
         run: |
           TAG="${{ steps.release.outputs.release_tag }}"
           APK="${{ steps.find_apk.outputs.apk_path }}"
-          echo "Uploading $(basename $APK) to release $TAG..."
           gh release upload "$TAG" "$APK" \
             --repo "${{ github.repository }}" \
             --clobber
