@@ -1,0 +1,237 @@
+/* ── 基础重置 ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d1117;
+  --card:     #161b22;
+  --border:   #30363d;
+  --accent:   #7c3aed;
+  --accent2:  #a855f7;
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --green:    #3fb950;
+  --red:      #f85149;
+  --yellow:   #d29922;
+  --radius:   16px;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body { padding: 0 16px 40px; }
+
+/* ── 滚动条 ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── App 容器 ─────────────────────────────────────────────── */
+#app { max-width: 480px; margin: 0 auto; }
+
+/* ── Header ──────────────────────────────────────────────── */
+header {
+  padding: 28px 0 20px;
+  text-align: center;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.cat-icon {
+  font-size: 52px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(124, 58, 237, 0.5));
+}
+
+.title-block h1 {
+  font-size: 30px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent2), #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── 版本卡片 ─────────────────────────────────────────────── */
+#version-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.card-inner { display: flex; flex-direction: column; gap: 10px; }
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.label { color: var(--muted); }
+
+.value { font-weight: 600; color: var(--text); }
+
+.status-ok      { color: var(--green) !important; }
+.status-error   { color: var(--red) !important; }
+.status-warn    { color: var(--yellow) !important; }
+.status-loading { color: var(--accent2) !important; }
+.status-idle    { color: var(--muted) !important; }
+
+/* ── 下载按钮 ─────────────────────────────────────────────── */
+#action-area {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.btn-download {
+  width: 100%;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+  user-select: none;
+}
+
+.btn-download:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
+}
+
+.btn-icon { font-size: 22px; }
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── 进度条 ─────────────────────────────────────────────── */
+#progress-section { margin-bottom: 20px; }
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.progress-bar-wrap {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+.progress-detail {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── 完成面板 ─────────────────────────────────────────────── */
+#done-section { text-align: center; margin-bottom: 20px; }
+
+.done-icon { font-size: 48px; margin-bottom: 8px; }
+
+.done-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.done-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.done-hint.warn { color: var(--yellow); }
+
+/* ── 错误面板 ─────────────────────────────────────────────── */
+#error-section { text-align: center; margin-bottom: 20px; }
+
+.error-icon { font-size: 48px; margin-bottom: 8px; }
+
+.error-text {
+  font-size: 15px;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+/* ── 通用次要按钮 ─────────────────────────────────────────── */
+.btn-secondary {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-secondary:active { background: var(--border); }
+
+/* ── 隐藏类 ─────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+footer p { margin-bottom: 4px; }
+
+footer a {
+  color: var(--accent2);
+  text-decoration: none;
+}
+
+.footer-note { font-size: 11px; opacity: 0.6; }
