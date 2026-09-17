@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
 
 jobs:
   build:
@@ -24,13 +23,27 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools: latest
+      # ── Android SDK 36 ───────────────────────────────────────
+      - name: Download cmdline-tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          curl -fsSL \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+            -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools/
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools \
+             $HOME/android-sdk/cmdline-tools/latest
 
-      - name: Accept Android licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+      - name: Accept licenses & install SDK
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses > /dev/null 2>&1 || true
+          sdkmanager --sdk_root=$ANDROID_HOME \
+            "platforms;android-34" \
+            "platforms;android-36" \
+            "build-tools;34.0.0" \
+            "build-tools;36.0.0"
 
       - name: Install npm dependencies
         run: npm ci
@@ -52,9 +65,11 @@ jobs:
 
       - name: Build APK
         run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Find APK
         id: find_apk
