@@ -98,16 +98,19 @@ jobs:
           if [[ "$REF" == refs/tags/* ]]; then
             TAG="${REF#refs/tags/}"
           else
-            # 从 commit message 或版本文件推断 tag（这里用 sha 前7位）
             TAG="sha-${{ github.sha }}"
           fi
 
-          # 检查 release 是否已存在
-          if gh release view "$TAG" --repo "${{ github.repository }}" &>/dev/null; then
+          # 先尝试查看 release 是否存在
+          set +e
+          gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1
+          CODE=$?
+          set -e
+
+          if [ $CODE -eq 0 ]; then
             echo "release_tag=$TAG" >> $GITHUB_OUTPUT
             echo "release_exists=true" >> $GITHUB_OUTPUT
           else
-            # 自动创建 release
             gh release create "$TAG" \
               --repo "${{ github.repository }}" \
               --title "Pycthoant Android $TAG" \
